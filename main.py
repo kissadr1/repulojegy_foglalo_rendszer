@@ -1,75 +1,38 @@
-from abc import ABC, abstractmethod
 from datetime import datetime
 
 
 # ======================
-# JÁRAT (ABSZTRAKT)
+# JÁRAT
 # ======================
-class Jarat(ABC):
-    def __init__(self, jaratszam, celallomas, jegyar):
-        self._jaratszam = jaratszam
-        self._celallomas = celallomas
-        self._jegyar = jegyar
-
-    @property
-    def jaratszam(self):
-        return self._jaratszam
-
-    @property
-    def jegyar(self):
-        return self._jegyar
-
-    @abstractmethod
-    def tipus(self):
-        pass
+class Jarat:
+    def __init__(self, jaratszam, celallomas, jegyar, tipus):
+        self.jaratszam = jaratszam
+        self.celallomas = celallomas
+        self.jegyar = jegyar
+        self.tipus = tipus
 
     def __str__(self):
-        ar = f"{self._jegyar:,}".replace(",", " ")
-        return f"{self.tipus()} | {self._jaratszam} -> {self._celallomas} | {ar} Ft"
+        return f"{self.tipus} | {self.jaratszam} -> {self.celallomas} | {self.jegyar} Ft"
 
 
 # ======================
-# BELFÖLDI
-# ======================
-class BelfoldiJarat(Jarat):
-    def tipus(self):
-        return "Belföldi"
-
-
-# ======================
-# NEMZETKÖZI
-# ======================
-class NemzetkoziJarat(Jarat):
-    def tipus(self):
-        return "Nemzetközi"
-
-
-# ======================
-# JEGY FOGLALÁS
+# FOGLALÁS
 # ======================
 class JegyFoglalas:
     def __init__(self, nev, jarat, datum):
-        self._nev = nev
-        self._jarat = jarat
+        self.nev = nev
+        self.jarat = jarat
 
         try:
-            self._datum = datetime.strptime(datum, "%Y-%m-%d")
-        except ValueError:
+            self.datum = datetime.strptime(datum, "%Y-%m-%d")
+        except:
             raise ValueError("Hibás dátum formátum!")
 
-        if self._datum < datetime.now():
+        if self.datum.date() < datetime.now().date():
             raise ValueError("A dátum nem lehet múltbeli!")
 
-    @property
-    def nev(self):
-        return self._nev
-
-    @property
-    def jarat(self):
-        return self._jarat
-
     def __str__(self):
-        return f"{self._nev} | {self._jarat.jaratszam} | {self._datum.date()}"
+        return f"{self.nev} | {self.jarat.jaratszam} | {self.datum.date()}"
 
 
 # ======================
@@ -77,73 +40,76 @@ class JegyFoglalas:
 # ======================
 class LegiTarsasag:
     def __init__(self, nev):
-        self._nev = nev
-        self._jaratok = []
-        self._foglalasok = []
+        self.nev = nev
+        self.jaratok = []
+        self.foglalasok = []
 
     def jarat_hozzaadas(self, jarat):
-        self._jaratok.append(jarat)
+        self.jaratok.append(jarat)
 
     def jaratok_listazasa(self):
-        for j in self._jaratok:
+        for j in self.jaratok:
             print(j)
 
     def foglalas(self, jaratszam, nev, datum):
-        jarat = next((j for j in self._jaratok if j.jaratszam == jaratszam), None)
+        jarat = None
 
-        if not jarat:
-            print("❌ Nincs ilyen járat!")
+        for j in self.jaratok:
+            if j.jaratszam == jaratszam:
+                jarat = j
+                break
+
+        if jarat is None:
+            print("Nincs ilyen járat!")
             return
 
         try:
-            foglalas = JegyFoglalas(nev, jarat, datum)
-            self._foglalasok.append(foglalas)
-            print(f"✅ Foglalás sikeres! Ár: {jarat.jegyar} Ft")
-        except Exception as e:
-            print("❌ Hiba:", e)
+            uj = JegyFoglalas(nev, jarat, datum)
+            self.foglalasok.append(uj)
+            print(f"Foglalás sikeres! Ár: {jarat.jegyar} Ft")
+        except ValueError as hiba:
+            print("Hiba:", hiba)
 
     def lemondas(self, nev, jaratszam):
-        for f in self._foglalasok:
-            if f.nev == nev and f.jarat.jaratszam == jaratszam:
-                self._foglalasok.remove(f)
-                print("✅ Foglalás törölve!")
-                return
+        talalat = None
 
-        print("❌ Nincs ilyen foglalás!")
+        for f in self.foglalasok:
+            if f.nev == nev and f.jarat.jaratszam == jaratszam:
+                talalat = f
+                break
+
+        if talalat:
+            self.foglalasok.remove(talalat)
+            print("Foglalás törölve!")
+        else:
+            print("Nincs ilyen foglalás!")
 
     def foglalasok_listazasa(self):
-        if not self._foglalasok:
+        if len(self.foglalasok) == 0:
             print("Nincs foglalás.")
-            return
-
-        for f in self._foglalasok:
-            print(f)
+        else:
+            for f in self.foglalasok:
+                print(f)
 
 
 # ======================
-# ELŐKÉSZÍTÉS (A TE JÁRATAID!)
+# ADATOK
 # ======================
 def inicializalas():
     lt = LegiTarsasag("WizzAir")
 
-    lt.jarat_hozzaadas(NemzetkoziJarat("J1", "Kréta", 85000))
-    lt.jarat_hozzaadas(NemzetkoziJarat("J2", "Mallorca", 90000))
-    lt.jarat_hozzaadas(NemzetkoziJarat("J3", "Berlin", 40000))
-    lt.jarat_hozzaadas(NemzetkoziJarat("J4", "Korfu", 67000))
-    lt.jarat_hozzaadas(NemzetkoziJarat("J5", "Szardínia", 97000))
-    lt.jarat_hozzaadas(NemzetkoziJarat("J6", "Stuttgart", 35000))
-    lt.jarat_hozzaadas(NemzetkoziJarat("J7", "London", 75000))
+    lt.jarat_hozzaadas(Jarat("J1", "Kréta", 85000, "Nemzetközi"))
+    lt.jarat_hozzaadas(Jarat("J2", "Mallorca", 90000, "Nemzetközi"))
+    lt.jarat_hozzaadas(Jarat("J3", "Berlin", 40000, "Nemzetközi"))
+    lt.jarat_hozzaadas(Jarat("J4", "Korfu", 67000, "Nemzetközi"))
+    lt.jarat_hozzaadas(Jarat("J5", "Szardínia", 97000, "Nemzetközi"))
+    lt.jarat_hozzaadas(Jarat("J6", "Stuttgart", 35000, "Nemzetközi"))
+    lt.jarat_hozzaadas(Jarat("J7", "London", 75000, "Nemzetközi"))
 
     # alap foglalások
     lt.foglalas("J1", "Anna", "2026-06-01")
     lt.foglalas("J2", "Béla", "2026-06-02")
     lt.foglalas("J3", "Cecil", "2026-06-03")
-    lt.foglalas("J4", "Dani", "2026-06-04")
-    lt.foglalas("J5", "Erika", "2026-06-05")
-    lt.foglalas("J6", "Feri", "2026-06-06")
-
-    # te
-    lt.foglalas("J7", "Balogh Adrienn", "2026-07-01")
 
     return lt
 
@@ -156,42 +122,41 @@ def menu():
 
     while True:
         print("\n--- REPÜLŐJEGY RENDSZER ---")
-        print("1 - Járatok listázása")
-        print("2 - Jegy foglalása")
-        print("3 - Foglalás lemondása")
-        print("4 - Foglalások listázása")
+        print("1 - Járatok")
+        print("2 - Foglalás")
+        print("3 - Lemondás")
+        print("4 - Foglalások")
         print("0 - Kilépés")
 
-        valasz = input("Választás: ")
+        v = input("Választás: ")
 
-        if valasz == "1":
+        if v == "1":
             lt.jaratok_listazasa()
 
-        elif valasz == "2":
+        elif v == "2":
             lt.jaratok_listazasa()
             j = input("Járatszám: ")
             n = input("Név: ")
             d = input("Dátum (YYYY-MM-DD): ")
             lt.foglalas(j, n, d)
 
-        elif valasz == "3":
+        elif v == "3":
             n = input("Név: ")
             j = input("Járatszám: ")
             lt.lemondas(n, j)
 
-        elif valasz == "4":
+        elif v == "4":
             lt.foglalasok_listazasa()
 
-        elif valasz == "0":
+        elif v == "0":
             print("Kilépés...")
             break
 
         else:
-            print("❌ Hibás választás!")
+            print("Hibás választás!")
 
 
 # ======================
 # FUTTATÁS
 # ======================
-if __name__ == "__main__":
-    menu()
+menu()
